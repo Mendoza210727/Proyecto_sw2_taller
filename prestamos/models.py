@@ -1,82 +1,107 @@
 from django.db import models
 
+# Opciones de género
+GENDER_CHOICES = [
+    ('M', 'Masculino'),
+    ('F', 'Femenino'),
+    ('O', 'Otro'),
+]
+
+# Opciones de estado de solicitud
+SOLICITUD_ESTADO_CHOICES = [
+    ('APROBADO', 'Aprobado'),
+    ('RECHAZADO', 'Rechazado'),
+    ('PENDIENTE', 'Pendiente'),
+]
+
+# Opciones de estado del crédito
+CREDITO_ESTADO_CHOICES = [
+    ('VIGENTE', 'Vigente'),
+    ('TERMINADO', 'Terminado'),
+    ('INCUMPLIDO', 'Incumplido'),
+]
+
+# Opciones de estado del pago
+PAGO_ESTADO_CHOICES = [
+    ('PENDIENTE', 'Pendiente'),
+    ('REALIZADO', 'Realizado'),
+    ('ATRASADO', 'Atrasado'),
+    ('INCUMPLIDO', 'Incumplido'),
+]
+
+
 class Cliente(models.Model):
-    nombre = models.CharField(max_length=80, blank = False)
-    apellidos = models.CharField(max_length=200, blank = False)
-    fecha_nacimiento = models.DateField(blank=False)
-    telefono = models.CharField( max_length=8, blank=False)
-    genero = models.CharField(max_length=1, blank=False)
+    nombre = models.CharField(max_length=80)
+    apellidos = models.CharField(max_length=200)
+    fecha_nacimiento = models.DateField()
+    telefono = models.CharField(max_length=8)
+    genero = models.CharField(max_length=1, choices=GENDER_CHOICES)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.nombre} {self.apellidos}"
+
 
 class DetalleCliente(models.Model):
-    detalle = models.TextField(blank = False)
-    ocupacion = models.CharField(max_length=150, blank= False)
-    fecha_inicio_ocupacion =  models.DateField(blank=False)
-    total_ingresos = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
-    tipo_ocupacion = models.CharField(max_length=150, blank=False)
-    fk_cliente = models.ForeignKey(Cliente, on_delete = models.SET_NULL, null=True)
+    detalle = models.TextField()
+    ocupacion = models.CharField(max_length=150)
+    fecha_inicio_ocupacion = models.DateField()
+    total_ingresos = models.DecimalField(max_digits=20, decimal_places=2)
+    tipo_ocupacion = models.CharField(max_length=150)
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
     create_at = models.DateTimeField(auto_now_add=True)
     update_at = models.DateTimeField(auto_now=True)
 
+
 class Prenda(models.Model):
-    descripcion = models.TextField(blank=False)
-    valor_estimado = models.DecimalField(max_digits=10, decimal_places=2, blank=False),
-    estado = models.CharField(max_length=50, blank=False)
-    fecha_resepcion = models.DateTimeField( auto_now_add=True)
-    fecha_devolucion = models.DateTimeField(null= True)
-    fk_cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null= True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, related_name="prendas")
+    descripcion = models.TextField()
+    valor_estimado = models.DecimalField(max_digits=20, decimal_places=2)
+    estado = models.CharField(max_length=50)
+    fecha_recepcion = models.DateTimeField(auto_now_add=True)
+    fecha_devolucion = models.DateTimeField(null=True, blank=True)
+
 
 class SolicitudCredito(models.Model):
-    monto = models.DecimalField(max_digits=10, decimal_places=2, blank= False)
-    fecha_solicitud = models.DateTimeField()
-    fecha_aprobacion = models.DateTimeField()
-    tasa_interes = models.DecimalField(max_digits=10, decimal_places = 0, blank= False)
-    estado_solicitud = models.CharField(
-        max_length= 50, blank= False,
-        choices = [
-            ('APROBADO' , 'Aprobado'),
-            ('RECHAZADO', 'Rechazado'),
-            ('PENDIENTE', 'Pendiente')
-        ]
-    )
-    fk_cliente = models.ForeignKey(Cliente, on_delete = models.SET_NULL, null = True)
-    fk_prenda = models.ForeignKey(Prenda, on_delete = models.SET_NULL, null = True)
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, related_name="solicitudes")
+    prenda = models.ForeignKey(Prenda, on_delete=models.SET_NULL, null=True, related_name="solicitudes")
+    monto = models.DecimalField(max_digits=20, decimal_places=2)
+    fecha_solicitud = models.DateTimeField(auto_now_add=True)
+    fecha_aprobacion = models.DateTimeField(null=True, blank=True)
+    tasa_interes = models.DecimalField(max_digits=5, decimal_places=2)
+    estado_solicitud = models.CharField(max_length=50, choices=SOLICITUD_ESTADO_CHOICES)
 
 
 class Credito(models.Model):
-    monto = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
-    fecha_aprobacion = models.DateTimeField()
+    cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, related_name="creditos")
+    solicitud = models.OneToOneField(SolicitudCredito, on_delete=models.CASCADE, related_name="credito")
+    prenda = models.ForeignKey(Prenda, on_delete=models.SET_NULL, null=True, related_name="creditos")
+    monto = models.DecimalField(max_digits=20, decimal_places=2)
+    fecha_aprobacion = models.DateTimeField(auto_now_add=True)
     fecha_vencimiento = models.DateTimeField()
-    tasa_interes = models.DecimalField(max_digits=5, decimal_places=2, help_text="Porcentaje de la tasa de interés")
-    estado_credito = models.CharField(
-        max_length=150, blank=False,
-        choices=[
-            ('VIGENTE', 'Vigente'),
-            ('TERMINADO', 'Terminado'),
-            ('INCUMPLIDO' ,'Incumplido')
-        ]
-    )
-    fk_cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True)
-    fk_prenda = models.ForeignKey(Prenda, on_delete=models.SET_NULL, null=True)
-    fk_solicitud_credito = models.ForeignKey(SolicitudCredito, on_delete = models.SET_NULL, null = True)
+    tasa_interes = models.DecimalField(max_digits=5, decimal_places=2)
+    estado_credito = models.CharField(max_length=50, choices=CREDITO_ESTADO_CHOICES)
+
 
 class PlanPagos(models.Model):
+    credito = models.ForeignKey(Credito, on_delete=models.CASCADE, related_name="planes_pagos")
     descripcion = models.CharField(max_length=250)
-    cantidad_pagos = models.DecimalField(max_digits=5, decimal_places=0)  # Añadir max_digits y decimal_places
+    cantidad_pagos = models.IntegerField()
     inicio_pago = models.DateField()
     fin_pago = models.DateField()
-    fk_credito = models.ForeignKey(Credito, on_delete=models.SET_NULL, null=True)
+
 
 class Pago(models.Model):
+    plan_pagos = models.ForeignKey(PlanPagos, on_delete=models.CASCADE, related_name="pagos")
     fecha_programada = models.DateField()
-    fecha_pago = models.DateField()
-    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2, blank=False)
-    estado_pago = models.CharField(max_length=50, blank=False, default='Pendiente')
-    fk_plan_pagos = models.ForeignKey(PlanPagos, on_delete=models.SET_NULL, null=True)
+    fecha_pago = models.DateField(null=True, blank=True)
+    monto_pagado = models.DecimalField(max_digits=20, decimal_places=2)
+    estado_pago = models.CharField(max_length=50, default='PENDIENTE', choices=PAGO_ESTADO_CHOICES)
+    dias_atraso = models.IntegerField(default=0)
 
-
-
-
-
-
+    def save(self, *args, **kwargs):
+        # Calcular automáticamente los días de atraso
+        if self.fecha_pago and self.fecha_programada:
+            self.dias_atraso = max((self.fecha_pago - self.fecha_programada).days, 0)
+        super().save(*args, **kwargs)

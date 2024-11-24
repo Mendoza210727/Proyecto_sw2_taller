@@ -61,3 +61,12 @@ def pago_delete(request, pk):
         return Response({'error':'El registro no es existe'})
     pago.delete()
     return Response({'messaje':'Registro eliminado con existo'})
+
+@api_view(['GET'])
+def pagos_planPagos(request, fk):
+    try:
+        pagos = Pago.objects.filter(plan_pagos = fk)
+    except Pago.DoesNotExist:
+        return Response({'error': ' El Plan de pagos no tiene pagos registrados'}, status = status.HTTP_400_BAD_REQUEST)
+    serializer = PagosSerializer(pagos, many = True)
+    return Response(serializer.data, status = status.HTTP_200_OK)

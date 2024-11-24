@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from .models import Cliente, DetalleCliente, Prenda, Credito, PlanPagos, Pago, SolicitudCredito
+from decimal import Decimal, ROUND_HALF_UP
+
 
 class ClienteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -40,14 +42,24 @@ class SolicitudSerializer(serializers.ModelSerializer):
 
 #algoritmo de Clasificacion K-means
 
-class ClienteSerializer(serializers.ModelSerializer):
-    detallecliente_set = Detalle_clienteSerializer(many=True, read_only=True)
-    prenda_set = PrendaSerializer(many=True, read_only=True)
-    credito_set = CreditoSerializer(many=True, read_only=True)
+""" class KMeansClusterSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text="ID del cliente")
+    nombre = serializers.CharField(max_length=80, help_text="Nombre del cliente")
+    apellidos = serializers.CharField(max_length=200, help_text="Apellidos del cliente")
+    total_creditos = serializers.IntegerField(help_text="Número total de créditos del cliente")
+    monto_promedio_credito = serializers.DecimalField(max_digits=20, decimal_places=2, help_text="Monto promedio de créditos")
+    total_pagos = serializers.IntegerField(help_text="Número total de pagos realizados")
+    cluster = serializers.IntegerField(help_text="Cluster asignado por el algoritmo K-Means") """
 
+
+
+class ClienteClusterSerializer(serializers.ModelSerializer):
+    cluster_grupo = serializers.CharField(read_only=True)
+    promedio_dias_atraso = serializers.FloatField(read_only=True)
+    porcentaje_pagos_atrasados = serializers.FloatField(read_only=True)
+    total_creditos = serializers.IntegerField(read_only=True)
+    
     class Meta:
         model = Cliente
-        fields = [
-            'id', 'nombre', 'apellidos', 'fecha_nacimiento', 'telefono', 'genero',
-            'detallecliente_set', 'prenda_set', 'credito_set'
-        ]
+        fields = ['id', 'nombre', 'apellidos', 'cluster_grupo', 'promedio_dias_atraso', 
+                 'porcentaje_pagos_atrasados', 'total_creditos']

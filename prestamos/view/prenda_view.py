@@ -30,15 +30,6 @@ def prenda_get(request, pk):
     serializer = PrendaSerializer(prenda)
     return Response(serializer.data, status =status.HTTP_200_OK)
 
-@api_view(['GET'])
-def prenda_get_fk(request, fk):
-    try:
-        prenda = Prenda.objects.filter(fk_cliente = fk)
-    except Prenda.DoesNotExist:
-        return Response({'error':'Prenda no encontrada'}, status = status.HTTP_404_NOT_FOUND)
-    serializer = PrendaSerializer(prenda, many= True)
-    return Response(serializer.data, status =status.HTTP_200_OK)
-
 
 @api_view(['PUT', 'PATCH'])
 def prenda_update(request, pk):
@@ -68,4 +59,13 @@ def prenda_delete(request, pk):
         return Response({'error':'Prenda no encontrada'}, status = status.HTTP_404_NOT_FOUND)
     prenda.delete()
     return Response({'message':'Prenda eliminada con exito'}, status = status.HTTP_200_OK)
+
+@api_view(['GET'])
+def prendas_clientes(request, fk):
+    try:
+        prendas = Prenda.objects.filter(cliente = fk)
+    except Prenda.DoesNotExist:
+        return Response({'error': 'el Cliente no tiene prendas'}, status= status.HTTP_400_BAD_REQUEST)
+    serializer = PrendaSerializer(prendas, many = True)
+    return Response(serializer.data, status = status.HTTP_200_OK)
 

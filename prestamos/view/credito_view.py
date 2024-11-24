@@ -3,7 +3,8 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 
-from ..models import Credito
+
+from ..models import Credito, Cliente
 from ..serializers import CreditoSerializer
 
 @api_view(['GET'])
@@ -55,3 +56,14 @@ def credito_delete(request , pk):
         return Response({'erro':'registro no existe'}, status = status.HTTP_400_BAD_REQUEST)
     credito.delete()
     return Response({'messaje': 'Registro eliminado correctament'}, status = status.HTTP_200_OK)
+
+@api_view(['GET'])
+def creditos_clientes(requets, fk):
+    try:
+        creditos = Credito.objects.filter(cliente = fk)
+    except Credito.DoesNotExist:
+        return Response({'error': 'El cliente o tiene creditos'}, status= status.HTTP_400_BAD_REQUEST)
+    serializer = CreditoSerializer(creditos, many = True)
+    return Response (serializer.data, status= status.HTTP_200_OK)
+
+
