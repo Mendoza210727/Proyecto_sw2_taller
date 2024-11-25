@@ -1,20 +1,36 @@
-# Usa una imagen oficial de Python como base
-FROM python:3.9-slim
+# Dockerfile
+FROM python:3.11.0-slim
 
-# Establecer el directorio de trabajo en el contenedor
+# Establecer directorio de trabajo
 WORKDIR /app
 
-# Copiar el archivo de dependencias de Python (requirements.txt)
+# Instalar dependencias del sistema necesarias
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    postgresql-client \
+    libpq-dev \
+    python3-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Variables de entorno para optimizar Python
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONPATH=/app
+ENV DJANGO_SETTINGS_MODULE=core.settings
+
+# Copiar requirements.txt primero
 COPY requirements.txt .
 
-# Instalar las dependencias
+# Instalar dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar todo el código de tu aplicación dentro del contenedor
+# Copiar el resto del código
 COPY . .
 
-# Establecer la variable de entorno para evitar problemas con el buffering de Django
-ENV PYTHONUNBUFFERED 1
+# Exponer el puerto que usa Django
+EXPOSE 8000
 
-# Ejecutar las migraciones y luego correr el servidor en el contenedor
-CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Comando para ejecutar la aplicación
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
